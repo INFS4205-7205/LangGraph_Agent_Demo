@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Building Personalised Local Agents with LangGraph & Ollama</title>
+    <style>
+        :root {
+            /* Light Mode (Premium Apple-style) */
+            --bg-color: #ffffff;
+            --text-color: #1d1d1f;
+            --secondary-bg: #f5f5f7;
+            --border-color: #d2d2d7;
+            --accent-color: #51247A;
+            /* UQ Purple */
+            --accent-hover: #3f1b5e;
+            --accent-gradient: linear-gradient(135deg, #51247A 0%, #9650d6 100%);
+            --code-bg: #f5f5f7;
+            --code-text: #1d1d1f;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        [data-theme="dark"] {
+            /* Dark Mode (Deep & Elegant) */
+            --bg-color: #000000;
+            --text-color: #f5f5f7;
+            --secondary-bg: #1c1c1e;
+            --border-color: #3a3a3c;
+            --accent-color: #9650d6;
+            /* Light Purple */
+            --accent-hover: #b074e6;
+            --accent-gradient: linear-gradient(135deg, #6a359c 0%, #b074e6 100%);
+            --code-bg: #1c1c1e;
+            --code-text: #f5f5f7;
+            --card-bg: rgba(28, 28, 30, 0.6);
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            transition: background-color 0.4s, color 0.4s;
+            overflow-x: hidden;
+        }
+
+        /* Particles / Hero Section */
+        #hero {
+            position: relative;
+            height: 65vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 50%, rgba(81, 36, 122, 0.1), transparent 70%);
+        }
+
+        #particles-js {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+
+        .hero-content {
+            z-index: 10;
+            padding: 2rem;
+            max-width: 800px;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        h1 {
+            font-weight: 800;
+            font-size: 3.5rem;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+            background: var(--accent-gradient);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.1;
+        }
+
+        .hero-subtitle {
+            font-size: 1.5rem;
+            color: var(--text-color);
+            opacity: 0.8;
+            font-weight: 400;
+            margin-bottom: 2rem;
+        }
+
+        .scroll-down {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+
+        .scroll-down:hover {
+            opacity: 1;
+        }
+
+        .scroll-down svg {
+            width: 30px;
+            height: 30px;
+            fill: var(--text-color);
+        }
+
+        /* Glassmorphic Header */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.05);
+            /* Very subtle tint */
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-bottom: var(--glass-border);
+            transition: background 0.3s;
+        }
+
+        [data-theme="dark"] header {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Sections */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 4rem 1.5rem;
+        }
+
+        section {
+            margin-bottom: 6rem;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+
+        section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.01em;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        p,
+        li {
+            font-size: 1.1rem;
+            color: var(--text-color);
+            opacity: 0.9;
+            margin-bottom: 1.2rem;
+        }
+
+        /* Cards & Info Blocks */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        @media (max-width: 768px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .resources-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .resources-grid {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        .resources-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin: 3rem auto;
+            /* Add more vertical spacing */
+            max-width: 1000px;
+            /* Force it narrower */
+            padding: 0 1rem;
+        }
+
+        .resources-grid a {
+            display: block;
+            height: 100%;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            border: var(--glass-border);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        /* Tabs (Apple Style) */
+        .tabs-container {
+            background: var(--secondary-bg);
+            border-radius: 12px;
+            padding: 4px;
+            display: inline-flex;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .tab {
+            padding: 8px 24px;
+            border-radius: 9px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-color);
+            opacity: 0.7;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        .tab.active {
+            background: var(--bg-color);
+            color: var(--text-color);
+            opacity: 1;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+            margin-top: 1rem;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        /* Code Blocks */
+        pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 14px;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            position: relative;
+            margin: 1.5rem 0;
+        }
+
+        code {
+            font-family: "SF Mono", Monaco, Consolas, monospace;
+            font-size: 0.9rem;
+            color: var(--code-text);
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--secondary-bg);
+        }
+
+        /* Terminals */
+        .terminal {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1.5rem;
+            border-radius: 10px;
+            font-family: "SF Mono", monospace;
+            margin: 1rem 0;
+            border: 1px solid #333;
+            position: relative;
+        }
+
+        .terminal code {
+            color: #f5f5f7;
+        }
+
+        .terminal-header {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .red {
+            background: #ff5f56;
+        }
+
+        .yellow {
+            background: #ffbd2e;
+        }
+
+        .green {
+            background: #27c93f;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            background: var(--secondary-bg);
+            border: none;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            transition: transform 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(15deg);
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes bounce {
+
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translate(-50%, 0);
+            }
+
+            40% {
+                transform: translate(-50%, -10px);
+            }
+
+            60% {
+                transform: translate(-50%, -5px);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Full Code Toggle */
+        details {
+            margin-top: 4rem;
+            background: var(--card-bg);
+            border: var(--glass-border);
+            border-radius: 16px;
+            padding: 0;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: all 0.3s;
+        }
+
+        summary {
+            padding: 1.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(81, 36, 122, 0.05);
+            transition: background 0.2s;
+        }
+
+        summary:hover {
+            background: rgba(81, 36, 122, 0.1);
+        }
+
+        summary::-webkit-details-marker {
+            display: none;
+        }
+
+        summary:after {
+            content: '+';
+            font-size: 1.5rem;
+            font-weight: 300;
+            transition: transform 0.3s;
+        }
+
+        details[open] summary:after {
+            transform: rotate(45deg);
+        }
+
+        .code-wrapper {
+            padding: 0 1.5rem 1.5rem;
+            max-height: 500px;
+            overflow-y: auto;
+            transition: max-height 0.5s ease;
+        }
+
+        details[open] .code-wrapper {
+            max-height: 800px;
+        }
+    </style>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Particles.js -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo">
+            <i class="fa-solid fa-robot" style="color: var(--accent-color);"></i>
+            <span>Agents.local</span>
+        </div>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle Dark Mode">
+            <i class="fa-solid fa-moon"></i>
+        </button>
+    </header>
+
+    <div id="hero">
+        <div id="particles-js"></div>
+        <div class="hero-content">
+            <h1>Personalised Intelligent Agents on Your Machine</h1>
+            <p class="hero-subtitle">Build your own personalised local agent with LangGraph & Ollama.</p>
+            <a href="#setup" class="scroll-down" aria-label="Scroll Down">
+                <svg viewBox="0 0 24 24">
+                    <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
+                </svg>
+            </a>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <section id="concepts">
+            <h2>Tech Stack</h2>
+            <div class="info-grid">
+                <div class="card">
+                    <span class="card-icon">🕸️</span>
+                    <h3><a href="https://langchain-ai.github.io/langgraph/" target="_blank"
+                            style="text-decoration: none; color: inherit;">LangGraph</a> <i
+                            class="fa-solid fa-arrow-up-right-from-square"
+                            style="font-size: 0.8rem; opacity: 0.5; margin-left: 5px;"></i></h3>
+                    <p>A library for building stateful, multi-actor applications with LLMs. Unlike simple chains,
+                        LangGraph allows for <strong>cycles</strong>, enabling agents to loop, reason, and correct
+                        themselves until a task is complete.</p>
+                </div>
+                <div class="card">
+                    <span class="card-icon">🦙</span>
+                    <h3><a href="https://ollama.com/" target="_blank"
+                            style="text-decoration: none; color: inherit;">Ollama</a> <i
+                            class="fa-solid fa-arrow-up-right-from-square"
+                            style="font-size: 0.8rem; opacity: 0.5; margin-left: 5px;"></i></h3>
+                    <p>The easiest way to get up and running with large language models locally. It bundles model
+                        weights, configuration, and data into a single package, defined by a Modelfile.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="setup">
+            <h2>Environment & Model Setup</h2>
+
+            <h3>1. Get Ollama Ready</h3>
+            <p>First, download Ollama from <a href="https://ollama.com/download" target="_blank"
+                    style="color: var(--accent-color);">ollama.com</a>. Once installed, open your
+                <strong>terminal</strong> to pull the
+                model we'll use (<a href="https://ollama.com/library/qwen3/tags" target="_blank"
+                    style="color: var(--accent-color);">Qwen3 0.6B</a> for speed). More models can be found at <a
+                    href="https://ollama.com/search" target="_blank" style="color: var(--accent-color);">ollama
+                    models</a>.
+            </p>
+
+            <div class="terminal">
+                <div class="terminal-header">
+                    <div class="dot red"></div>
+                    <div class="dot yellow"></div>
+                    <div class="dot green"></div>
+                </div>
+                <code>
+                # Pull a small, capable model<br>
+                ollama pull qwen3:0.6b<br><br>
+                # Start the server (if not running)<br>
+                ollama serve
+            </code>
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+
+            <h3>2. Project Environment</h3>
+            <p>We recommend using <code>uv</code> for lightning-fast Python package management. Otherwise, you can
+                download <a href="https://www.python.org/downloads/" target="_blank"
+                    style="color: var(--accent-color);">Python</a> manually install the required packages.</p>
+
+            <div class="tabs-container">
+                <button class="tab active" data-group="env" onclick="openTab('mac')"><i class="fab fa-apple"></i> macOS
+                    / Linux</button>
+                <button class="tab" data-group="env" onclick="openTab('win')"><i class="fab fa-windows"></i>
+                    Windows</button>
+            </div>
+            <div id="mac" class="tab-content active" data-group="env">
+                <div class="terminal">
+                    <div class="terminal-header">
+                        <div class="dot red"></div>
+                        <div class="dot yellow"></div>
+                        <div class="dot green"></div>
+                    </div>
+                    <code>
+                    # Install uv<br>
+                    curl -LsSf https://astral.sh/uv/install.sh | sh<br><br>
+                    # (Optional) If pip is available:<br>
+                    # pip install uv
+                    <br><br>
+                    # Create & activate environment<br>
+                    uv venv<br>
+                    source .venv/bin/activate<br><br>
+                    # Install dependencies<br>
+                    uv pip install langchain-ollama langgraph langchain-core
+                </code>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+            </div>
+
+            <div id="win" class="tab-content" data-group="env">
+                <div class="terminal">
+                    <div class="terminal-header">
+                        <div class="dot red"></div>
+                        <div class="dot yellow"></div>
+                        <div class="dot green"></div>
+                    </div>
+                    <code>
+                     # Install uv (PowerShell)<br>
+                    powershell -c "irm https://astral.sh/uv/install.ps1 | iex"<br><br>
+                    # (Optional) If pip is available:<br>
+                    # pip install uv
+                    <br><br>
+
+                    # Create & activate environment<br>
+                    uv venv<br>
+                    .venv\Scripts\activate<br><br>
+                    # Install dependencies<br>
+                    uv pip install langchain-ollama langgraph langchain-core
+                </code>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="walkthrough">
+            <h2>Building the Agent - Minimal Demo</h2>
+            <p>We will construct a minimal agent using LangGraph and a local Ollama model (Qwen3 0.6B) that can answer
+                questions using an external course dataset, solve simple
+                arithmetic problems with the help of a calculator function, and save notes to your disk. In the
+                following sections, we will break down the core logic of the agent step by step.</p>
+
+            <h3>1. Basic Tools</h3>
+            <p>Before giving the agent a brain, we give it hands. Tools are simple Python functions decorated with
+                <code>@tool</code>. The docstring is crucial, it tells the LLM <em>when</em> and <em>how</em> to use the
+                tool.
+            </p>
+            <pre><code class="language-python">@tool
+def calc(expression: str) -> str:
+    """Evaluate a simple arithmetic expression."""
+    # ... logic to eval safely ...
+    result = eval(expression, {"__builtins__": {}}, {})
+    return str(result)
+
+@tool
+def write_text(path: str, content: str) -> str:
+    """Write text content to a local file."""
+    # ... logic to write file ...
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(content)
+    return f"Saved to {path}"</code><button class="copy-btn" onclick="copyToClipboard(this)">Copy</button></pre>
+
+            <h3>2. Knowledge Retrieval (RAG)</h3>
+            <p>For domain-specific questions (like university courses), the agent needs to search some external data.
+                For demonstration, we load a dummy CSV file as follow, and create a search tool invokes by the agent
+                based on keywords.</p>
+
+            <details id="courses-csv-details" style="margin-top: 1rem; margin-bottom: 2rem;">
+                <summary>courses.csv</summary>
+                <div class="code-wrapper">
+                    <pre><code class="language-csv">code,title,description,level
+CS101,Introduction to Programming,Learn basic programming concepts using Python,Undergraduate
+CS204,Data Structures,Study arrays lists trees and graphs,Undergraduate
+CS305,Machine Learning,Supervised and unsupervised learning methods,Undergraduate
+CS705,Advanced AI Agents,Design and evaluation of autonomous AI agents,Postgraduate
+CS710,Research Methods in AI,Experimental design and evaluation for AI research,Postgraduate</code><button class="copy-btn" onclick="copyToClipboard(this)">Copy</button></pre>
+                </div>
+            </details>
+            <pre><code class="language-python"># Load data once
+COURSES = load_courses("courses.csv")
+
+@tool
+def search_courses(query: str) -> str:
+    """A simple search of the course dataset for relevant entries."""
+    # ... calculates relevance score for each course ...
+    # ... returns top matches as a formatted string ...
+    return results</code><button class="copy-btn" onclick="copyToClipboard(this)">Copy</button></pre>
+
+            <h3>3. The Brain (LLM & State)</h3>
+            <p>At the core of our agent is the <strong>Brain</strong>—a combination of the LLM (Ollama), the System
+                Prompt (instructions), and the State (memory).</p>
+
+            <div style="text-align: center; margin: 2rem 0;">
+                <img src="agent_flow_diagram.png" alt="Agent Flow Diagram"
+                    style="max-width: 100%; border-radius: 10px; box-shadow: var(--shadow);">
+                <p style="font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.8;">The cyclic flow of the LangGraph agent.
+                </p>
+            </div>
+
+            <h4>The System Prompt</h4>
+            <p>This is where we give the agent its personality and rules. We explicitly tell it which tools to use and
+                how to behave. This reduces hallucinations and ensures it follows our constraints. An example prompt can
+                be: </p>
+            <pre><code class="language-python">SYSTEM_PROMPT = SystemMessage(
+    content=(
+        "You are a helpful assistant with access to tools.\n"
+        "Guidelines:\n"
+        "- Use search_courses for queries about the curriculum.\n"
+        "- Use calc for any math.\n"
+        "- Use write_text to save files."
+    )
+)</code><button class="copy-btn" onclick="copyToClipboard(this)">Copy</button></pre>
+
+            <h4>The State</h4>
+            <p>The <code>AgentState</code> acts as the short-term memory. It stores a list of <code>messages</code> that
+                grows as the conversation progresses. This allows the model to "remember" previous turns.</p>
+            <pre><code class="language-python">class AgentState(TypedDict):
+    messages: List[BaseMessage] # Stores user inputs, agent replies, and tool results
+
+# Bind tools so the model knows they exist
+TOOLS = [search_courses, calc, write_text]
+llm = ChatOllama(model="qwen3:0.6b-q4_K_M", temperature=0).bind_tools(TOOLS)</code><button class="copy-btn" onclick="copyToClipboard(this)">Copy</button></pre>
+
+            <h3>4. The Graph Logic</h3>
+            <p>We use <strong>LangGraph</strong> to define the workflow. Instead of a linear script, we build a graph
+                with nodes (actions) and edges (transitions).</p>
+            <ul>
+                <li><strong>Agent Node</strong>: The decision maker. It looks at the state and prompts the LLM. The LLM
+                    decides whether to reply directly or call a tool.</li>
+                <li><strong>Tools Node</strong>: The executor. If the Agent requests a tool call, this node runs the
+                    Python function and returns the output.</li>
+                <li><strong>Conditional Edge</strong>: The traffic controller. It checks the Agent's output:
+                    <ul>
+                        <li>If <code>tool_calls</code> exist → Go to <strong>Tools</strong>.</li>
+                        <li>If just text → <strong>End</strong> (respond to user).</li>
+                    </ul>
+                </li>
+            </ul>
+            <pre><code class="language-python">graph = StateGraph(AgentState)
+graph.add_node("agent", agent_node)
+graph.add_node("tools", tool_node)
+
+graph.set_entry_point("agent")
+
+# The Cycle: Agent -> (decides) -> Tools -> (returns) -> Agent
+graph.add_conditional_edges(
+    "agent",
+    route_after_agent,
+    {"tools": "tools", END: END}
+)
+graph.add_edge("tools", "agent") # Important: Loop back to Agent!
+
+app = graph.compile()</code><button class="copy-btn" onclick="copyToClipboard(this)">Copy</button></pre>
+        </section>
+        <p>The complete code is provided as a reference:</p>
+        <details id="local-agent-py-details">
+            <summary>View Complete Source Code: local_agent.py</summary>
+            <div class="code-wrapper">
+                <pre><button class="copy-btn" onclick="copyToClipboard(this)">Copy</button><code class="language-python">from typing import TypedDict, List
+import csv
+
+from langchain_ollama import ChatOllama
+from langchain.tools import tool
+from langchain_core.messages import (
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+)
+from langgraph.graph import StateGraph, END
+from langgraph.prebuilt import ToolNode
+
+
+# =========================
+# Agent State
+# =========================
+
+class AgentState(TypedDict):
+    messages: List[BaseMessage]
+
+
+# =========================
+# Dataset
+# =========================
+
+def load_courses(path: str = "courses.csv"):
+    with open(path, newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f))
+
+COURSES = load_courses()
+
+
+# =========================
+# Tools
+# =========================
+
+@tool
+def search_courses(query: str) -> str:
+    """Search the course dataset for relevant entries."""
+    query_tokens = query.lower().split()
+    scored = []
+
+    for course in COURSES:
+        text = " ".join(course.values()).lower()
+        score = sum(token in text for token in query_tokens)
+        if score > 0:
+            scored.append((score, course))
+
+    if not scored:
+        return "No relevant courses found in the dataset."
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+
+    return "\n".join(
+        f"{c['code']}: {c['title']} ({c['level']}) - {c['description']}"
+        for _, c in scored
+    )
+
+
+@tool
+def calc(expression: str) -> str:
+    """Evaluate a simple arithmetic expression."""
+    allowed = set("0123456789+-*/(). %")
+    if any(ch not in allowed for ch in expression):
+        return "Error: invalid characters"
+
+    try:
+        return str(eval(expression, {"__builtins__": {}}, {}))
+    except Exception as e:
+        return f"Error: {e}"
+
+
+@tool
+def write_text(path: str, content: str) -> str:
+    """Write text content to a local file."""
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+        return f"Saved {len(content)} characters to {path}"
+    except Exception as e:
+        return f"Error: {e}"
+
+
+TOOLS = [search_courses, calc, write_text]
+
+
+# =========================
+# LLM
+# =========================
+
+llm = ChatOllama(
+    model="qwen3:0.6b-q4_K_M",
+    temperature=0,
+).bind_tools(TOOLS)
+
+
+# =========================
+# System Prompt
+# =========================
+
+SYSTEM_PROMPT = SystemMessage(
+    content=(
+        "You are a careful assistant with access to tools.\n\n"
+        "Guidelines:\n"
+        "- Use calc for ANY arithmetic, even if it seems simple.\n"
+        "- Use write_text when the user asks to write text content to a local file.\n"
+        "- Use search_courses when the user asks about courses, degrees, or programs.\n"
+        "- When search_courses returns results, summarize or filter them to answer the user's question.\n"
+        "- Do NOT ask follow-up questions unless the request is ambiguous.\n"
+        "- If you answer without tools and the answer could be wrong, that is a failure.\n"
+        "- Prefer tools when accuracy matters."
+    )
+)
+
+# =========================
+# Graph Nodes
+# =========================
+
+def agent_node(state: AgentState):
+    messages = state["messages"]
+
+    # Find the last human message (original question)
+    last_user_msg = None
+    for m in reversed(messages):
+        if isinstance(m, HumanMessage):
+            last_user_msg = m.content
+            break
+
+    if messages and messages[-1].type == "tool":
+        # Tool just ran → force final answer grounded in results
+        messages = messages + [
+            SystemMessage(
+                content=(
+                    "You have received tool results.\n"
+                    f"The original user question was:\n"
+                    f"\"{last_user_msg}\"\n\n"
+                    "Answer that question directly using the tool results.\n"
+                    "Do NOT ask clarifying questions.\n"
+                    "Do NOT call any more tools."
+                )
+            )
+        ]
+    else:
+        messages = messages + [
+            SystemMessage(
+                content="Before answering, decide whether a tool would improve accuracy."
+            )
+        ]
+
+    response = llm.invoke(messages)
+    return {"messages": state["messages"] + [response]}
+
+
+tool_node = ToolNode(TOOLS)
+
+
+def route_after_agent(state: AgentState):
+    last = state["messages"][-1]
+    if hasattr(last, "tool_calls") and last.tool_calls:
+        return "tools"
+    return END
+
+
+def print_tool_usage(messages):
+    used_any = False
+
+    for m in messages:
+        if hasattr(m, "tool_calls") and m.tool_calls:
+            used_any = True
+            for call in m.tool_calls:
+                print(f"[TOOL CALL] {call['name']}({call['args']})")
+
+        if m.type == "tool":
+            print(f"[TOOL RESULT] {m.content}")
+
+    if not used_any:
+        print("[TOOLS] No tools were used.")
+
+
+# =========================
+# Build LangGraph
+# =========================
+
+graph = StateGraph(AgentState)
+
+graph.add_node("agent", agent_node)
+graph.add_node("tools", tool_node)
+
+graph.set_entry_point("agent")
+
+graph.add_conditional_edges(
+    "agent",
+    route_after_agent,
+    {
+        "tools": "tools",
+        END: END,
+    },
+)
+
+graph.add_edge("tools", "agent")
+
+app = graph.compile()
+
+
+# =========================
+# Run loop
+# =========================
+
+if __name__ == "__main__":
+    print("\nMinimal LangGraph Agent ready. Type 'exit' to quit.")
+
+    while True:
+        user = input("\nYou: ").strip()
+        if user.lower() in {"exit", "quit"}:
+            break
+
+        result = app.invoke(
+            {
+                "messages": [
+                    SYSTEM_PROMPT,
+                    HumanMessage(content=user),
+                ]
+            }
+        )
+
+        print(f"\nAgent: {result['messages'][-1].content}")
+</code></pre>
+            </div>
+        </details>
+        <h3>5. Run the Agent</h3>
+        <p>Save the <a href="#" onclick="scrollToDetails('courses-csv-details'); return false;"
+                style="color: var(--accent-color);">courses.csv</a> and <a href="#"
+                onclick="scrollToDetails('local-agent-py-details'); return false;"
+                style="color: var(--accent-color);">local_agent.py</a> files in the same directory. Now we can run the
+            agent and
+            interact
+            with it in the terminal.</p>
+        <div class="terminal">
+            <div class="terminal-header">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+            </div>
+            <code>
+                # Start the Ollama server if not already running <br>
+                ollama serve<br><br>
+
+                # Run the agent <br>
+                uv run python local_agent.py
+            </code>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <p>Example interaction:</p>
+
+        <div class="tabs-container">
+            <button class="tab active" data-group="interaction" onclick="openTab('interaction-agent')"><i
+                    class="fa-solid fa-robot"></i> Agent (LangGraph)</button>
+            <button class="tab" data-group="interaction" onclick="openTab('interaction-raw')"><i
+                    class="fa-solid fa-brain"></i> Raw Model (Ollama)</button>
+        </div>
+
+        <div id="interaction-agent" class="tab-content active" data-group="interaction">
+            <div class="terminal">
+                <div class="terminal-header">
+                    <div class="dot red"></div>
+                    <div class="dot yellow"></div>
+                    <div class="dot green"></div>
+                </div>
+                <code>
+                    Minimal LangGraph Agent ready. Type 'exit' to quit.<br><br>
+
+                    You: What are the courses available for undergraduate students? <br><br>
+                    
+                    <span style="color: rgb(9, 163, 40);">### Invoked search tool ###</span><br>              
+                    Agent: The provided courses are: <br>
+                    - CS101: Introduction to Programming (Undergraduate) - Learn basic programming concepts using Python, <br>
+                    - CS204: Data Structures (Undergraduate) - Study arrays lists trees and graphs, and <br>
+                    - CS305: Machine Learning (Undergraduate) - Supervised and unsupervised learning methods. <br><br>
+
+                    You: What is 25*(10+5)/(10+2)? Write the answer into a file called answer.txt <br><br>
+
+                    <span style="color: rgb(9, 163, 40);">### Invoked calculator tool ###</span><br>              
+                    Agent: The answer is 31.25. <br><br>
+
+                    You: Write a poem and save it to poem.txt <br><br>
+
+                    <span style="color: rgb(9, 163, 40);">### Invoked write_text tool ###</span><br>
+                    Agent: The action was successful. 170 characters were saved to poem.txt. <br><br>
+
+                    You: exit
+                </code>
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+        </div>
+
+        <div id="interaction-raw" class="tab-content" data-group="interaction">
+            <div class="terminal">
+                <div class="terminal-header">
+                    <div class="dot red"></div>
+                    <div class="dot yellow"></div>
+                    <div class="dot green"></div>
+                </div>
+                <code>
+                    &gt;&gt;&gt; ollama run qwen3:0.6b <br><br>
+                    
+                    You: What are the courses available for undergraduate students? <br><br>
+                    
+                    <span style="color: rgb(216, 14, 14);">### Does not have access to external data ###</span><br>              
+                    Model: I do not have access to external data. You would need to check the university's official website for that information.<br><br>
+                    
+                    You: What is 25*(10+5)/(10+2)?  <br><br>
+                    
+                    <span style="color: rgb(216, 14, 14);">### Longer chain of thought - Wasting tokens ###</span><br>              
+                    Model: The expression is:<br><br>
+                    $$
+                    \frac{25 \times (10 + 5)}{10 + 2}
+                    $$<br><br>
+
+                    **Step-by-step calculation:**<br><br>
+
+                    1. **Simplify the numerator**:  
+                    $10 + 5 = 15$  
+                    $25 \times 15 = 375$<br><br>
+
+                    2. **Simplify the denominator**:  
+                    $10 + 2 = 12$<br><br>
+
+                    3. **Divide**:  
+                    $\frac{375}{12} = 31.25$<br><br>
+
+                    **Final Answer:**  
+                    $$
+                    \boxed{31.25}
+                    $$<br><br>
+
+                    You: Write a poem and save it to poem.txt <br><br>
+                    
+                    <span style="color: rgb(216, 14, 14);">### Cannot save files ###</span><br>   
+                    Model: Here is a poem for you:<br>
+                    The digital wind blows soft and cold,<br>
+                    Binary stories, new and old.<br>
+                    <br>
+                    (I cannot save files to your disk.)<br><br>
+
+                    You: /bye
+                </code>
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+        </div>
+        <details id="poem_text" style="margin-top: 1rem; margin-bottom: 2rem;">
+            <summary>poem.txt</summary>
+            <div class="code-wrapper">
+                <pre><code>Stars in the sky, moon's glow, a tale told by night.
+Whispers through trees, secrets in the wind.
+A heart that beats, a soul that sings. 
+In this world, we find our light.</code><button class="copy-btn" onclick="copyToClipboard(this)">Copy</button></pre>
+            </div>
+        </details>
+        </section>
+
+        <section id="resources">
+            <h2>Additional Resources</h2>
+            <div class="resources-grid">
+                <a href="https://langchain-ai.github.io/langgraph/" target="_blank"
+                    style="text-decoration: none; color: inherit;">
+                    <div class="card" style="height: 100%;">
+                        <span class="card-icon"><i class="fa-solid fa-graduation-cap"></i></span>
+                        <h3>LangGraph Docs</h3>
+                        <p>Official documentation for building stateful agents.</p>
+                    </div>
+                </a>
+                <a href="https://ollama.com/" target="_blank" style="text-decoration: none; color: inherit;">
+                    <div class="card">
+                        <span class="card-icon"><i class="fa-solid fa-server"></i></span>
+                        <h3>Ollama</h3>
+                        <p>Get up and running with large language models locally.</p>
+                    </div>
+                </a>
+                <!-- <a href="https://python.langchain.com/docs/introduction/" target="_blank"
+                    style="text-decoration: none; color: inherit;">
+                    <div class="card">
+                        <span class="card-icon"><i class="fa-solid fa-book"></i></span>
+                        <h3>LangChain</h3>
+                        <p>The core framework for developing LLM applications.</p>
+                    </div>
+                </a> -->
+                <a href="https://docs.astral.sh/uv/" target="_blank" style="text-decoration: none; color: inherit;">
+                    <div class="card">
+                        <span class="card-icon"><i class="fa-solid fa-bolt"></i></span>
+                        <h3>uv Documentation</h3>
+                        <p>An extremely fast Python package and project manager.</p>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+    </div>
+
+
+    <script>
+        // Theme Toggle
+        const toggleButton = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+        const icon = toggleButton.querySelector('i');
+
+        toggleButton.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                html.setAttribute('data-theme', 'light');
+                icon.classList.replace('fa-sun', 'fa-moon');
+                updateParticles('#51247A');
+            } else {
+                html.setAttribute('data-theme', 'dark');
+                icon.classList.replace('fa-moon', 'fa-sun');
+                updateParticles('#9650d6');
+            }
+        });
+
+        // Particle Configuration
+        function initParticles(color) {
+            particlesJS('particles-js', {
+                particles: {
+                    number: { value: 60, density: { enable: true, value_area: 800 } },
+                    color: { value: color },
+                    shape: { type: "circle" },
+                    opacity: { value: 0.2, random: false },
+                    size: { value: 3, random: true },
+                    line_linked: { enable: true, distance: 150, color: color, opacity: 0.15, width: 1 },
+                    move: { enable: true, speed: 2, direction: "none", random: false, straight: false, out_mode: "out", bounce: false }
+                },
+                interactivity: {
+                    detect_on: "canvas",
+                    events: { onhover: { enable: true, mode: "grab" }, onclick: { enable: true, mode: "push" }, resize: true },
+                    modes: { grab: { distance: 140, line_linked: { opacity: 0.3 } } }
+                },
+                retina_detect: true
+            });
+        }
+
+        function updateParticles(color) {
+            // Simple re-init to change color (a bit heavy but works for demo)
+            initParticles(color);
+        }
+
+        // Initialize particles on load
+        document.addEventListener('DOMContentLoaded', () => {
+            initParticles('#51247A');
+
+            // Reveal Animations
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('section').forEach(section => {
+                observer.observe(section);
+            });
+        });
+
+        // Tabs
+        window.openTab = function (tabName) {
+            // Find the button that was clicked
+            const button = event.currentTarget;
+            const container = button.closest('.tabs-container');
+            const group = button.getAttribute('data-group');
+
+            if (!container || !group) return;
+
+            // Deactivate all buttons in this specific container
+            container.querySelectorAll('.tab').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+
+            // Hide all content blocks associated with this group
+            document.querySelectorAll(`.tab-content[data-group="${group}"]`).forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Show the target content
+            const target = document.getElementById(tabName);
+            if (target) {
+                target.classList.add('active');
+            }
+        }
+
+        // Copy Code
+        window.copyCode = function (button) {
+            // Handles terminal blocks specifically
+            const codeBlock = button.parentElement.querySelector('code');
+            const text = codeBlock.innerText; // Get raw text
+            navigator.clipboard.writeText(text).then(() => {
+                button.innerText = 'Copied!';
+                setTimeout(() => button.innerText = 'Copy', 2000);
+            });
+        }
+
+        window.copyToClipboard = function (button) {
+            // Handles pre > code blocks
+            const pre = button.parentElement;
+            const code = pre.querySelector('code');
+            const text = code.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.innerText;
+                button.innerText = 'Copied!';
+                setTimeout(() => button.innerText = originalText, 2000);
+            });
+        }
+
+        // Scroll and Open Details
+        window.scrollToDetails = function (id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.open = true; // Open the details block
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                // Optional: Highlight effect
+                const summary = element.querySelector('summary');
+                summary.style.transition = 'background-color 0.5s';
+                const originalBg = summary.style.backgroundColor;
+                summary.style.backgroundColor = 'rgba(81, 36, 122, 0.2)'; // Highlight color
+                setTimeout(() => {
+                    summary.style.backgroundColor = originalBg;
+                }, 1500);
+            }
+        }
+    </script>
+
+</body>
+
+</html>
