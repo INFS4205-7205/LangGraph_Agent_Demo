@@ -792,6 +792,12 @@ def search_images(query: str) -> str:
             <div class="code-wrapper">
                 <pre><button class="copy-btn" onclick="copyToClipboard(this)">Copy</button><code class="language-python">from typing import TypedDict, List
 import csv
+import os
+import chromadb
+from chromadb.config import Settings
+from PIL import Image
+from sentence_transformers import SentenceTransformer
+import uuid
 
 from langchain_ollama import ChatOllama
 from langchain.tools import tool
@@ -873,16 +879,6 @@ def write_text(path: str, content: str) -> str:
     except Exception as e:
         return f"Error: {e}"
 
-
-import os
-import chromadb
-from chromadb.config import Settings
-from PIL import Image
-from sentence_transformers import SentenceTransformer
-import uuid
-
-# ... (existing imports) ...
-
 # =========================
 # Image Indexing (CLIP + ChromaDB)
 # =========================
@@ -893,8 +889,10 @@ class ImageIndex:
         
         # Initialize ChromaDB (persistent)
         self.client = chromadb.PersistentClient(path="./chroma_db")
-        self.collection = self.client.get_or_create_collection(name="local_images")
-        
+        self.collection = self.client.get_or_create_collection(
+            name="local_images",
+            metadata={"hnsw:space": "cosine"}
+        )        
         # Load CLIP model
         print("Loading CLIP model...")
         self.model = SentenceTransformer('clip-ViT-B-32')
@@ -1015,7 +1013,6 @@ SYSTEM_PROMPT = SystemMessage(
         "- Prefer tools when accuracy matters."
     )
 )
-
 
 # =========================
 # Graph Nodes

@@ -97,8 +97,10 @@ class ImageIndex:
         
         # Initialize ChromaDB (persistent)
         self.client = chromadb.PersistentClient(path="./chroma_db")
-        self.collection = self.client.get_or_create_collection(name="local_images")
-        
+        self.collection = self.client.get_or_create_collection(
+            name="local_images",
+            metadata={"hnsw:space": "cosine"}
+        )        
         # Load CLIP model
         print("Loading CLIP model...")
         self.model = SentenceTransformer('clip-ViT-B-32')
