@@ -1,5 +1,11 @@
 from typing import TypedDict, List
 import csv
+import os
+import chromadb
+from chromadb.config import Settings
+from PIL import Image
+from sentence_transformers import SentenceTransformer
+import uuid
 
 from langchain_ollama import ChatOllama
 from langchain.tools import tool
@@ -80,16 +86,6 @@ def write_text(path: str, content: str) -> str:
         return f"Saved {len(content)} characters to {path}"
     except Exception as e:
         return f"Error: {e}"
-
-
-import os
-import chromadb
-from chromadb.config import Settings
-from PIL import Image
-from sentence_transformers import SentenceTransformer
-import uuid
-
-# ... (existing imports) ...
 
 # =========================
 # Image Indexing (CLIP + ChromaDB)
@@ -223,7 +219,6 @@ SYSTEM_PROMPT = SystemMessage(
         "- Prefer tools when accuracy matters."
     )
 )
-
 
 # =========================
 # Graph Nodes
