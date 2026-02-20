@@ -617,7 +617,7 @@
                     uv venv<br>
                     source .venv/bin/activate<br><br>
                     # Install dependencies<br>
-                    uv pip install langchain-ollama langgraph langchain-core
+                    uv pip install langchain-ollama langgraph langchain-core chromadb sentence-transformers pillow
                 </code>
                     <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 </div>
@@ -641,7 +641,7 @@
                     uv venv<br>
                     .venv\Scripts\activate<br><br>
                     # Install dependencies<br>
-                    uv pip install langchain-ollama langgraph langchain-core
+                    uv pip install langchain-ollama langgraph langchain-core chromadb sentence-transformers pillow
                 </code>
                     <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 </div>
@@ -764,8 +764,27 @@ graph.add_conditional_edges(
     {"tools": "tools", END: END}
 )
 graph.add_edge("tools", "agent") # Important: Loop back to Agent!
+ 
+ app = graph.compile()</code><button class="copy-btn" onclick="copyToClipboard(this)">Copy</button></pre>
 
-app = graph.compile()</code><button class="copy-btn" onclick="copyToClipboard(this)">Copy</button></pre>
+            <h3>5. Visual Capabilities (CLIP + ChromaDB)</h3>
+            <p>To give the agent "sight," we use <strong>CLIP</strong> to embed images and <strong>ChromaDB</strong> to
+                store and search them efficiently. This allows the agent to find images based on their content.</p>
+
+            <pre><code class="language-python"># 1. Setup Chroma & CLIP
+class ImageIndex:
+    def __init__(self):
+        self.client = chromadb.PersistentClient(path="./chroma_db")
+        self.collection = self.client.get_or_create_collection("local_images")
+        self.model = SentenceTransformer('clip-ViT-B-32')
+        # ... embeds images & stores in Chroma ...
+
+# 2. Expose as a Tool
+@tool
+def search_images(query: str) -> str:
+    """Search for images/memes/photos locally using a description."""
+    # ... queries Chroma collection ...
+    return results</code><button class="copy-btn" onclick="copyToClipboard(this)">Copy</button></pre>
         </section>
         <p>The complete code is provided as a reference:</p>
         <details id="local-agent-py-details">
@@ -855,7 +874,118 @@ def write_text(path: str, content: str) -> str:
         return f"Error: {e}"
 
 
-TOOLS = [search_courses, calc, write_text]
+import os
+import chromadb
+from chromadb.config import Settings
+from PIL import Image
+from sentence_transformers import SentenceTransformer
+import uuid
+
+# ... (existing imports) ...
+
+# =========================
+# Image Indexing (CLIP + ChromaDB)
+# =========================
+
+class ImageIndex:
+    def __init__(self, image_dir: str = "images"):
+        self.image_dir = image_dir
+        
+        # Initialize ChromaDB (persistent)
+        self.client = chromadb.PersistentClient(path="./chroma_db")
+        self.collection = self.client.get_or_create_collection(name="local_images")
+        
+        # Load CLIP model
+        print("Loading CLIP model...")
+        self.model = SentenceTransformer('clip-ViT-B-32')
+        
+        self._index_images()
+
+    def _index_images(self):
+        if not os.path.exists(self.image_dir):
+            os.makedirs(self.image_dir)
+            
+        # Get list of images on disk
+        valid_exts = {".jpg", ".jpeg", ".png", ".webp"}
+        image_files = [
+            f for f in os.listdir(self.image_dir) 
+            if os.path.splitext(f)[1].lower() in valid_exts
+        ]
+        
+        if not image_files:
+            print(f"No images found in {self.image_dir}")
+            return
+
+        # Check what's already indexed to avoid re-embedding
+        existing_ids = set(self.collection.get()["ids"])
+        
+        new_images = []
+        new_ids = []
+        new_metadatas = []
+        
+        print("Checking for new images to index...")
+        for f in image_files:
+            file_id = f"img_{f}" # Simple ID scheme
+            if file_id not in existing_ids:
+                try:
+                    # Open and validate image
+                    img_path = os.path.join(self.image_dir, f)
+                    image = Image.open(img_path)
+                    new_images.append(image)
+                    new_ids.append(file_id)
+                    new_metadatas.append({"filename": f})
+                except Exception as e:
+                    print(f"Skipping {f}: {e}")
+
+        if new_images:
+            print(f"Embedding and indexing {len(new_images)} new images...")
+            embeddings = self.model.encode(new_images, normalize_embeddings=True)
+            self.collection.add(
+                embeddings=embeddings.tolist(),
+                ids=new_ids,
+                metadatas=new_metadatas
+            )
+            print("Indexing complete.")
+        else:
+            print("Index is up to date.")
+
+    def search(self, query: str, k: int = 3):
+        # Embed query
+        query_emb = self.model.encode([query], normalize_embeddings=True)
+        
+        # Query Chroma
+        results = self.collection.query(
+            query_embeddings=query_emb,
+            n_results=k
+        )
+        
+        # Parse results
+        parsed = []
+        if results and results['metadatas']:
+            metas = results['metadatas'][0]
+            dists = results['distances'][0]  # Chroma returns distances by default
+            
+            for i, meta in enumerate(metas):
+                parsed.append((meta['filename'], dists[i]))
+                
+        return parsed
+
+# Initialize global index
+image_index = ImageIndex()
+
+@tool
+def search_images(query: str) -> str:
+    """Search for images/memes/photos locally using a description."""
+    results = image_index.search(query)
+    if not results:
+        return "No relevant images found."
+    
+    return "\n".join(
+        f"Top K = 3 Images Found: {filename} (distance: {dist:.2f})" 
+        for filename, dist in results
+    )
+
+TOOLS = [search_courses, calc, write_text, search_images]
 
 
 # =========================
@@ -885,6 +1015,7 @@ SYSTEM_PROMPT = SystemMessage(
         "- Prefer tools when accuracy matters."
     )
 )
+
 
 # =========================
 # Graph Nodes

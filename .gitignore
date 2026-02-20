@@ -42,3 +42,5 @@ next-env.d.ts
 
 # uv env
 langgraph_demo
+
+images/
