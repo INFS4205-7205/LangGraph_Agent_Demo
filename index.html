@@ -1144,12 +1144,12 @@ if __name__ == "__main__":
         </details>
         <h3>5. Run the Agent</h3>
         <p>Save the <a href="#" onclick="scrollToDetails('courses-csv-details'); return false;"
-                style="color: var(--accent-color);">courses.csv</a> and <a href="#"
+                style="color: var(--accent-color);">courses.csv</a>, <a href="#"
                 onclick="scrollToDetails('local-agent-py-details'); return false;"
-                style="color: var(--accent-color);">local_agent.py</a> files in the same directory. Now we can run the
-            agent and
-            interact
-            with it in the terminal.</p>
+                style="color: var(--accent-color);">local_agent.py</a>, and <a href="#"
+                onclick="scrollToDetails('images-details'); return false;"
+                style="color: var(--accent-color);">images</a> folder with any sample images in the same directory.
+            Now we can run the agent and interact with it in the terminal.</p>
         <div class="terminal">
             <div class="terminal-header">
                 <div class="dot red"></div>
@@ -1201,6 +1201,11 @@ if __name__ == "__main__":
 
                     <span style="color: rgb(9, 163, 40);">### Invoked write_text tool ###</span><br>
                     Agent: The action was successful. 170 characters were saved to poem.txt. <br><br>
+
+                    Search for images of a cat <br><br>
+
+                    <span style="color: rgb(9, 163, 40);">### Invoked image search tool - Returning the Top-K = 3 images ###</span><br>
+                    Agent: Found the following images: cats.png (0.74), red_panda.png (0.78), and dog.png (0.80) <br><br>
 
                     You: exit
                 </code>
@@ -1256,6 +1261,11 @@ if __name__ == "__main__":
                     Binary stories, new and old.<br>
                     <br>
                     (I cannot save files to your disk.)<br><br>
+
+                    You: Search for images of a cat <br><br>
+
+                    <span style="color: rgb(216, 14, 14);">### Cannot search for images ###</span><br>
+                    Model: I cannot search for images. You would need to use an image search engine for that.<br><br>
 
                     You: /bye
                 </code>
